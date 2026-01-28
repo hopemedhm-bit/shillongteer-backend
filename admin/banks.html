@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>User Banks</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="topbar">
+    <h2>User Banks</h2>
+    <button onclick="logout()">Logout</button>
+</div>
+
+<div class="table-container">
+    <table id="bankTable">
+        <thead>
+            <tr>
+                <th>Mobile</th>
+                <th>Bank Name</th>
+                <th>Account No</th>
+                <th>IFSC</th>
+                <th>Holder Name</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+</div>
+
+<script src="./script.js"></script>
+<script>console.log("PAGE LOADED:", window.location.pathname);</script>
+</body>
+</html>

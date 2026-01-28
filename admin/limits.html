@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Update Limits</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="topbar">
+    <h2>Update Limits</h2>
+    <button onclick="logout()">Logout</button>
+</div>
+
+<div class="form-container">
+
+    <h3>Limits Settings</h3>
+
+    <input id="min_bid" type="number" placeholder="Min Bid">
+    <input id="max_bid" type="number" placeholder="Max Bid">
+    <input id="max_single_number" type="number" placeholder="Max Single Number">
+    <input id="max_house" type="number" placeholder="Max House">
+    <input id="max_ending" type="number" placeholder="Max Ending">
+
+    <input id="round1_open" type="text" placeholder="Round 1 Open (HH:MM)">
+    <input id="round1_close" type="text" placeholder="Round 1 Close (HH:MM)">
+    <input id="round2_open" type="text" placeholder="Round 2 Open (HH:MM)">
+    <input id="round2_close" type="text" placeholder="Round 2 Close (HH:MM)">
+
+    <button onclick="saveLimits()">Save</button>
+    <p id="msg"></p>
+</div>
+
+<script src="./script.js"></script>
+<script>console.log("PAGE LOADED:", window.location.pathname);</script>
+</body>
+</html>
