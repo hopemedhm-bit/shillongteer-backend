@@ -1,31 +1,46 @@
 // utils/roundUtils.js
 
 module.exports = {
-    FIRST_START: "09:00",
-    FIRST_END: "15:45",
-    SECOND_START: "16:00",
-    SECOND_END: "16:45",
+    // Time windows (IST)
+    FIRST_OPEN: 10 * 60 + 45,    // 10:45 AM
+    FIRST_CLOSE: 15 * 60 + 45,   // 3:45 PM
 
+    SECOND_OPEN: 16 * 60 + 15,   // 4:15 PM
+    SECOND_CLOSE: 17 * 60,       // 5:00 PM
+
+    // Get current round using IST
     getCurrentRound(serverTime) {
-        const now = new Date(serverTime);
+        const istNow = new Date(
+            new Date(serverTime).toLocaleString("en-US", {
+                timeZone: "Asia/Kolkata",
+            })
+        );
 
-        const firstStart = this.toTodayTime(this.FIRST_START);
-        const firstEnd = this.toTodayTime(this.FIRST_END);
+        const hours = istNow.getHours();
+        const minutes = istNow.getMinutes();
+        const totalMinutes = hours * 60 + minutes;
 
-        const secondStart = this.toTodayTime(this.SECOND_START);
-        const secondEnd = this.toTodayTime(this.SECOND_END);
+        // Before 10:45 AM
+        if (totalMinutes < this.FIRST_OPEN) {
+            return "before_first";
+        }
 
-        if (now < firstStart) return "before_first";
-        if (now >= firstStart && now <= firstEnd) return "first";
-        if (now > firstEnd && now < secondStart) return "between";
-        if (now >= secondStart && now <= secondEnd) return "second";
+        // First round: 10:45 AM – 3:45 PM
+        if (totalMinutes >= this.FIRST_OPEN && totalMinutes < this.FIRST_CLOSE) {
+            return "first";
+        }
+
+        // Between rounds: 3:45 PM – 4:15 PM
+        if (totalMinutes >= this.FIRST_CLOSE && totalMinutes < this.SECOND_OPEN) {
+            return "between";
+        }
+
+        // Second round: 4:15 PM – 5:00 PM
+        if (totalMinutes >= this.SECOND_OPEN && totalMinutes < this.SECOND_CLOSE) {
+            return "second";
+        }
+
+        // After 5:00 PM
         return "closed";
-    },
-
-    toTodayTime(timeStr) {
-        const [h, m] = timeStr.split(":").map(Number);
-        const d = new Date();
-        d.setHours(h, m, 0, 0);
-        return d;
     }
 };
