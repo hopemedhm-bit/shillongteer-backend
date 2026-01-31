@@ -18,7 +18,7 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, "admin")));
 
 // ===============================
-// API ROUTES
+// API ROUTES (Existing)
 // ===============================
 app.use("/auth", require("./routes/authRoutes"));
 app.use("/bank", require("./routes/bankRoutes"));
@@ -27,6 +27,12 @@ app.use("/bets", require("./routes/betRoutes"));
 app.use("/history", require("./routes/historyRoutes"));
 app.use("/results", require("./routes/resultsRoutes"));
 app.use("/admin", require("./routes/adminRoutes")); // admin login API
+
+// ===============================
+// NEW API ROUTES (Secure Time + Status)
+// ===============================
+app.use("/api/time", require("./routes/timeRoutes"));
+app.use("/api/status", require("./routes/statusRoutes"));
 
 // ===============================
 // DEFAULT ROUTE
