@@ -7,13 +7,10 @@ const {
     updateStatus
 } = require("../controllers/paymentController");
 
-
-
 router.post("/create", createPayment);
 
 router.get("/status/:orderId", checkStatus);
 
 router.post("/webhook", updateStatus);
-
 
 module.exports = router;
