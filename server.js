@@ -4,7 +4,10 @@ const dotenv = require("dotenv");
 const connectDB = require("./config/db");
 const path = require("path");
 
+// Load environment variables
 dotenv.config();
+
+// Connect MongoDB
 connectDB();
 
 const app = express();
@@ -25,8 +28,8 @@ app.use("/limits", require("./routes/limitsRoutes"));
 app.use("/bets", require("./routes/betRoutes"));
 app.use("/history", require("./routes/historyRoutes"));
 app.use("/results", require("./routes/resultsRoutes"));
-app.use("/admin", require("./routes/adminRoutes")); 
-app.use("/payment", require("./routes/paymentRoutes"));   // ⭐ Added and correct
+app.use("/admin", require("./routes/adminRoutes"));
+app.use("/payment", require("./routes/paymentRoutes")); // ⭐ Dynamic QR payment route
 
 // ===============================
 // DEFAULT ROUTE
@@ -39,4 +42,4 @@ app.get("/", (req, res) => {
 // SERVER START
 // ===============================
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on ${PORT}`));   // ⭐ ONLY ONCE
+app.listen(PORT, () => console.log(`Server running on ${PORT}`));
