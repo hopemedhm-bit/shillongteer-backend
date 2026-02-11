@@ -27,6 +27,8 @@ app.use("/bets", require("./routes/betRoutes"));
 app.use("/history", require("./routes/historyRoutes"));
 app.use("/results", require("./routes/resultsRoutes"));
 app.use("/admin", require("./routes/adminRoutes")); // admin login API
+app.use("/payment", require("./routes/paymentRoutes"));
+
 
 // ===============================
 // DEFAULT ROUTE
