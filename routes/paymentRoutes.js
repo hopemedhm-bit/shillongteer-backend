@@ -7,13 +7,23 @@ const {
     updateStatus
 } = require("../controllers/paymentController");
 
-// Generate Dynamic QR
+
+// ============================================================
+// 1️⃣ Create Dynamic QR (Android → Backend)
+// ============================================================
 router.post("/create", createPayment);
 
-// Poll status
+
+// ============================================================
+// 2️⃣ Check Payment Status (Android Polling)
+// ============================================================
 router.get("/status/:orderId", checkStatus);
 
-// PSP webhook (optional)
+
+// ============================================================
+// 3️⃣ PSP / Manual Status Update Webhook (Optional Admin Tool)
+// ============================================================
 router.post("/webhook", updateStatus);
+
 
 module.exports = router;
