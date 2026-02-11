@@ -6,7 +6,11 @@ const paymentSchema = new mongoose.Schema({
     upiId: { type: String, required: true },
     qrString: { type: String, required: true },
     qrBase64: { type: String, required: true },
-    status: { type: String, default: "PENDING" },  // PENDING / SUCCESS / FAILED
+    status: {
+        type: String,
+        enum: ["PENDING", "SUCCESS", "FAILED"],
+        default: "PENDING"
+    },
     createdAt: { type: Date, default: Date.now }
 });
 
