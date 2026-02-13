@@ -1,4 +1,6 @@
 const Result = require("../models/Result");
+const User = require("../models/User");
+const admin = require("firebase-admin");
 
 //
 // =============================
@@ -7,13 +9,16 @@ const Result = require("../models/Result");
 //
 exports.getTodayResult = async (req, res) => {
     try {
-        const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+        const today = new Date().toISOString().split("T")[0];
 
         let result = await Result.findOne({ date: today });
 
-        // If today's result does NOT exist → create empty
         if (!result) {
-            result = await Result.create({ date: today, round1: "", round2: "" });
+            result = await Result.create({
+                date: today,
+                round1: "",
+                round2: ""
+            });
         }
 
         return res.json({
@@ -31,11 +36,10 @@ exports.getTodayResult = async (req, res) => {
     }
 };
 
+
 //
 // =============================
 // ANDROID — GET OLD RESULTS
-// =============================
-// filter = today / all
 // =============================
 //
 exports.getOldResults = async (req, res) => {
@@ -47,7 +51,7 @@ exports.getOldResults = async (req, res) => {
             const today = new Date().toISOString().split("T")[0];
             results = await Result.find({ date: today });
         } else {
-            results = await Result.find().sort({ date: -1 }); // latest first
+            results = await Result.find().sort({ date: -1 });
         }
 
         return res.json({
@@ -65,11 +69,10 @@ exports.getOldResults = async (req, res) => {
     }
 };
 
+
 //
 // =============================
 // ADMIN — UPDATE TODAY RESULT
-// =============================
-// round1 OR round2 can update separately
 // =============================
 //
 exports.updateResult = async (req, res) => {
@@ -79,18 +82,58 @@ exports.updateResult = async (req, res) => {
 
         let result = await Result.findOne({ date: today });
 
-        // If today result not exists → create new
         if (!result) {
             result = await Result.create({
                 date: today,
                 round1: round1 || "",
                 round2: round2 || ""
             });
-        } 
-        else {
+        } else {
             if (round1 !== undefined) result.round1 = round1;
             if (round2 !== undefined) result.round2 = round2;
             await result.save();
+        }
+
+        // ==============================
+        // 🔥 SEND PUSH NOTIFICATION
+        // ==============================
+
+        let title = "Shillong Teer Result 🎯";
+        let body = "";
+
+        if (round1 !== undefined) {
+            body = `First Round Result: ${round1}`;
+        }
+
+        if (round2 !== undefined) {
+            body = `Second Round Result: ${round2}`;
+        }
+
+        if (body !== "") {
+
+            const users = await User.find({
+                fcmToken: { $ne: null }
+            });
+
+            const tokens = users.map(u => u.fcmToken);
+
+            if (tokens.length > 0) {
+
+                const message = {
+                    notification: {
+                        title: title,
+                        body: body
+                    },
+                    tokens: tokens
+                };
+
+                try {
+                    const response = await admin.messaging().sendEachForMulticast(message);
+                    console.log("Result push sent:", response.successCount);
+                } catch (pushError) {
+                    console.log("Result push error:", pushError.message);
+                }
+            }
         }
 
         return res.json({
