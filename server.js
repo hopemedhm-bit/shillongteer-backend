@@ -3,16 +3,16 @@ const cors = require("cors");
 const dotenv = require("dotenv");
 const connectDB = require("./config/db");
 const path = require("path");
-const admin = require("firebase-admin");
 
 // ===============================
-// LOAD ENV
+// LOAD ENV VARIABLES
 // ===============================
 dotenv.config();
 
 // ===============================
-// INIT FIREBASE ADMIN (FCM)
+// INIT FIREBASE (loads firebase.js)
 // ===============================
+require("./firebase");
 
 // ===============================
 // CONNECT DATABASE
@@ -20,7 +20,7 @@ dotenv.config();
 connectDB();
 
 // ===============================
-// INIT APP
+// INIT EXPRESS APP
 // ===============================
 const app = express();
 
@@ -51,13 +51,14 @@ app.use(express.static(path.join(__dirname, "admin")));
 // DEFAULT ROUTE
 // ===============================
 app.get("/", (req, res) => {
-    res.send("Teer Result Backend Running");
+    res.send("Teer Result Backend Running 🚀");
 });
 
 // ===============================
 // START SERVER
 // ===============================
 const PORT = process.env.PORT || 5000;
+
 app.listen(PORT, () => {
-    console.log(`Server running on ${PORT}`);
+    console.log(`Server running on port ${PORT}`);
 });
