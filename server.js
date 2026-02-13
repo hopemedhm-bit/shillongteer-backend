@@ -29,7 +29,8 @@ app.use("/bets", require("./routes/betRoutes"));
 app.use("/history", require("./routes/historyRoutes"));
 app.use("/results", require("./routes/resultsRoutes"));
 app.use("/admin", require("./routes/adminRoutes"));
-app.use("/payment", require("./routes/paymentRoutes")); // ⭐ Dynamic QR payment route
+app.use("/payment", require("./routes/paymentRoutes")); 
+app.use("/", require("./routes/statusRoutes"));
 
 // ===============================
 // DEFAULT ROUTE
