@@ -19,11 +19,6 @@ app.use(cors());
 app.use(express.json());
 
 // ===============================
-// SERVE ADMIN PANEL STATIC FILES
-// ===============================
-app.use(express.static(path.join(__dirname, "admin")));
-
-// ===============================
 // API ROUTES
 // ===============================
 app.use("/auth", require("./routes/authRoutes"));
@@ -35,8 +30,13 @@ app.use("/results", require("./routes/resultsRoutes"));
 app.use("/admin", require("./routes/adminRoutes"));
 app.use("/payment", require("./routes/paymentRoutes"));
 
-// ⭐ TIME + STATUS (no /api prefix)
+// ⭐ TIME + STATUS
 app.use("/", require("./routes/statusRoutes"));
+
+// ===============================
+// SERVE ADMIN PANEL STATIC FILES
+// ===============================
+app.use(express.static(path.join(__dirname, "admin")));
 
 // ===============================
 // DEFAULT ROUTE
