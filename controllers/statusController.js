@@ -1,9 +1,9 @@
 const { getRoundStatus } = require("../utils/roundUtils");
 
-exports.getStatus = (req, res) => {
+exports.getStatus = async (req, res) => {
     try {
 
-        const data = getRoundStatus();
+        const data = await getRoundStatus();
 
         res.json({
             success: true,
