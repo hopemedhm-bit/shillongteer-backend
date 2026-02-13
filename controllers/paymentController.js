@@ -2,64 +2,64 @@ const QRCode = require("qrcode");
 const Payment = require("../models/paymentModel");
 const { v4: uuidv4 } = require("uuid");
 
-// ⭐ Your merchant UPI ID
+// ⭐ Merchant Config
 const MERCHANT_UPI = "6000120935@okbizaxis";
-
-// ⭐ Clean merchant display name
 const MERCHANT_NAME = "TeerApp";
-
 
 // ============================================================
 // 1️⃣ CREATE PAYMENT (Generate Dynamic QR)
 // ============================================================
+
 exports.createPayment = async (req, res) => {
     try {
         const { amount } = req.body;
 
-        if (!amount) {
+        // ✅ Strict validation
+        if (!amount || isNaN(amount) || Number(amount) <= 0) {
             return res.status(400).json({
                 success: false,
-                message: "Amount is required",
+                message: "Invalid payment amount"
             });
         }
 
-        // Generate unique order ID
+        const numericAmount = Number(amount).toFixed(2);
+
+        // Generate secure unique orderId
         const orderId = "ORD" + uuidv4().replace(/-/g, "").slice(0, 12);
 
-        // Construct secure UPI string
+        // Construct UPI string
         const upiString =
             `upi://pay?pa=${MERCHANT_UPI}` +
             `&pn=${encodeURIComponent(MERCHANT_NAME)}` +
-            `&am=${amount}` +
+            `&am=${numericAmount}` +
             `&cu=INR` +
             `&tn=${orderId}`;
 
-        // Create QR (Base64)
+        // Generate QR as Base64
         const qrBase64 = await QRCode.toDataURL(upiString);
 
-        // Save in DB - ⭐ ALWAYS PENDING
+        // Save payment as PENDING
         await Payment.create({
             orderId,
-            amount,
+            amount: numericAmount,
             upiId: MERCHANT_UPI,
             qrString: upiString,
             qrBase64,
-            status: "PENDING",
+            status: "PENDING"
         });
 
         return res.json({
             success: true,
             orderId,
-            amount,
-            qrBase64,
-            upiString,
+            amount: numericAmount,
+            qrBase64
         });
 
     } catch (err) {
-        console.error("QR Create Error:", err);
-        res.status(500).json({
+        console.error("CREATE PAYMENT ERROR:", err);
+        return res.status(500).json({
             success: false,
-            message: "Server error creating QR",
+            message: "Server error while creating payment"
         });
     }
 };
@@ -68,56 +68,96 @@ exports.createPayment = async (req, res) => {
 // ============================================================
 // 2️⃣ CHECK PAYMENT STATUS (Android Polling)
 // ============================================================
+
 exports.checkStatus = async (req, res) => {
     try {
         const { orderId } = req.params;
+
+        if (!orderId) {
+            return res.status(400).json({
+                success: false,
+                message: "Order ID required"
+            });
+        }
 
         const payment = await Payment.findOne({ orderId });
 
         if (!payment) {
             return res.status(404).json({
                 success: false,
-                message: "Order not found",
+                message: "Order not found"
             });
         }
 
         return res.json({
             success: true,
-            status: payment.status,   // PENDING / SUCCESS / FAILED
+            status: payment.status
         });
 
     } catch (err) {
-        console.error("Status Error:", err);
-        res.status(500).json({
+        console.error("CHECK STATUS ERROR:", err);
+        return res.status(500).json({
             success: false,
-            message: "Server error checking status",
+            message: "Server error checking status"
         });
     }
 };
 
 
 // ============================================================
-// 3️⃣ MANUAL / PSP WEBHOOK PAYMENT UPDATE
+// 3️⃣ SECURE WEBHOOK (Update Payment Status)
 // ============================================================
+
 exports.updateStatus = async (req, res) => {
     try {
+        // ✅ Webhook secret verification
+        const webhookSecret = req.headers["x-webhook-secret"];
+
+        if (webhookSecret !== process.env.PAYMENT_WEBHOOK_SECRET) {
+            return res.status(403).json({
+                success: false,
+                message: "Unauthorized webhook"
+            });
+        }
+
         const { orderId, status } = req.body;
 
-        const allowed = ["PENDING", "SUCCESS", "FAILED"];
+        if (!orderId || !status) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid webhook payload"
+            });
+        }
 
-        const finalStatus = allowed.includes(status)
-            ? status
-            : "SUCCESS";
+        const allowedStatuses = ["PENDING", "SUCCESS", "FAILED"];
 
-        await Payment.findOneAndUpdate(
+        if (!allowedStatuses.includes(status)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid payment status"
+            });
+        }
+
+        const updated = await Payment.findOneAndUpdate(
             { orderId },
-            { status: finalStatus }
+            { status },
+            { new: true }
         );
+
+        if (!updated) {
+            return res.status(404).json({
+                success: false,
+                message: "Order not found"
+            });
+        }
 
         return res.json({ success: true });
 
     } catch (err) {
-        console.error("Webhook Error:", err);
-        res.status(500).json({ success: false });
+        console.error("WEBHOOK ERROR:", err);
+        return res.status(500).json({
+            success: false,
+            message: "Server error updating payment"
+        });
     }
 };
