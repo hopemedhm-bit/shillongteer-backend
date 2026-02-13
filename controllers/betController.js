@@ -1,4 +1,6 @@
 const Bet = require("../models/Bet");
+const User = require("../models/User");
+const admin = require("firebase-admin");
 
 //
 // ========================
@@ -20,6 +22,33 @@ exports.submitBet = async (req, res) => {
             date
         });
 
+        // ===========================
+        // 🔥 SEND PUSH NOTIFICATION
+        // ===========================
+        try {
+            const user = await User.findById(userId);
+
+            if (user && user.fcmToken) {
+
+                const message = {
+                    token: user.fcmToken,
+                    notification: {
+                        title: "Bet Placed Successfully 🎯",
+                        body: `Your bet of ₹${total_amount} has been placed for ${round} round.`
+                    }
+                };
+
+                await admin.messaging().send(message);
+
+                console.log("Push sent successfully to user:", userId);
+            } else {
+                console.log("No FCM token found for user:", userId);
+            }
+
+        } catch (pushError) {
+            console.log("Push sending failed:", pushError.message);
+        }
+
         return res.json({
             success: true,
             message: "Bet submitted successfully",
@@ -34,6 +63,7 @@ exports.submitBet = async (req, res) => {
         });
     }
 };
+
 
 //
 // ========================
@@ -68,6 +98,7 @@ exports.getUserHistory = async (req, res) => {
         });
     }
 };
+
 
 //
 // ========================
