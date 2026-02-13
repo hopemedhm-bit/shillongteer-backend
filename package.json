@@ -21,5 +21,6 @@
     "qrcode": "^1.5.3",
     "uuid": "^9.0.1",
     "moment-timezone": "^0.5.45"
+    "firebase-admin": "^12.0.0"
   }
 }
