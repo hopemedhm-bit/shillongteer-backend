@@ -3,11 +3,27 @@ const cors = require("cors");
 const dotenv = require("dotenv");
 const connectDB = require("./config/db");
 const path = require("path");
+const admin = require("firebase-admin");
 
 // ===============================
-// LOAD ENV + CONNECT DB
+// LOAD ENV
 // ===============================
 dotenv.config();
+
+// ===============================
+// INIT FIREBASE ADMIN (FCM)
+// ===============================
+admin.initializeApp({
+    credential: admin.credential.cert({
+        projectId: process.env.GOOGLE_PROJECT_ID,
+        clientEmail: process.env.GOOGLE_CLIENT_EMAIL,
+        privateKey: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n')
+    })
+});
+
+// ===============================
+// CONNECT DATABASE
+// ===============================
 connectDB();
 
 // ===============================
