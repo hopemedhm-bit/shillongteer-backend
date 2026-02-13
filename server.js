@@ -4,13 +4,17 @@ const dotenv = require("dotenv");
 const connectDB = require("./config/db");
 const path = require("path");
 
-// Load environment variables
+// ===============================
+// LOAD ENV + CONNECT DB
+// ===============================
 dotenv.config();
-
-// Connect MongoDB
 connectDB();
 
+// ===============================
+// INIT APP
+// ===============================
 const app = express();
+
 app.use(cors());
 app.use(express.json());
 
@@ -29,7 +33,9 @@ app.use("/bets", require("./routes/betRoutes"));
 app.use("/history", require("./routes/historyRoutes"));
 app.use("/results", require("./routes/resultsRoutes"));
 app.use("/admin", require("./routes/adminRoutes"));
-app.use("/payment", require("./routes/paymentRoutes")); 
+app.use("/payment", require("./routes/paymentRoutes"));
+
+// ⭐ TIME + STATUS (no /api prefix)
 app.use("/", require("./routes/statusRoutes"));
 
 // ===============================
@@ -40,7 +46,9 @@ app.get("/", (req, res) => {
 });
 
 // ===============================
-// SERVER START
+// START SERVER
 // ===============================
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on ${PORT}`));
+app.listen(PORT, () => {
+    console.log(`Server running on ${PORT}`);
+});
