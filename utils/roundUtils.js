@@ -6,10 +6,12 @@ exports.getRoundStatus = () => {
 
     const now = moment().tz(TZ);
 
-    const firstOpen   = moment.tz(now.format("YYYY-MM-DD") + " 10:45", TZ);
-    const firstClose  = moment.tz(now.format("YYYY-MM-DD") + " 15:45", TZ);
-    const secondOpen  = moment.tz(now.format("YYYY-MM-DD") + " 16:15", TZ);
-    const secondClose = moment.tz(now.format("YYYY-MM-DD") + " 17:00", TZ);
+    const today = now.format("YYYY-MM-DD");
+
+    const firstOpen   = moment.tz(`${today} 10:45`, TZ);
+    const firstClose  = moment.tz(`${today} 15:45`, TZ);
+    const secondOpen  = moment.tz(`${today} 16:15`, TZ);
+    const secondClose = moment.tz(`${today} 17:00`, TZ);
 
     let round = "closed";
     let bettingAllowed = false;
@@ -17,16 +19,20 @@ exports.getRoundStatus = () => {
     if (now.isBefore(firstOpen)) {
         round = "before_first";
         bettingAllowed = true;
-    } else if (now.isBefore(firstClose)) {
+    } 
+    else if (now.isBefore(firstClose)) {
         round = "first";
         bettingAllowed = true;
-    } else if (now.isBefore(secondOpen)) {
+    } 
+    else if (now.isBefore(secondOpen)) {
         round = "between";
         bettingAllowed = false;
-    } else if (now.isBefore(secondClose)) {
+    } 
+    else if (now.isBefore(secondClose)) {
         round = "second";
         bettingAllowed = true;
-    } else {
+    } 
+    else {
         round = "closed";
         bettingAllowed = false;
     }
@@ -37,4 +43,3 @@ exports.getRoundStatus = () => {
         serverTime: now.valueOf()
     };
 };
-
