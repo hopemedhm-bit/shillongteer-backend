@@ -4,39 +4,26 @@ const router = express.Router();
 const {
     createPayment,
     checkStatus,
-    updateStatus,
     submitUtr,
     adminApprovePayment
 } = require("../controllers/paymentController");
 
 
-// ============================================================
-// USER ROUTES
-// ============================================================
+// ================= USER ROUTES =================
 
 // 1️⃣ Generate QR
 router.post("/create", createPayment);
 
-// 2️⃣ Submit UTR after payment
+// 2️⃣ Submit UTR
 router.post("/submit-utr", submitUtr);
 
-// 3️⃣ Check payment status (App polling)
+// 3️⃣ Check Status
 router.get("/status/:orderId", checkStatus);
 
 
-// ============================================================
-// SYSTEM / WEBHOOK ROUTE
-// ============================================================
+// ================= ADMIN ROUTE =================
 
-// 4️⃣ Secure webhook (optional gateway usage)
-router.post("/webhook", updateStatus);
-
-
-// ============================================================
-// ADMIN ROUTE (Manual Verification)
-// ============================================================
-
-// 5️⃣ Admin approve payment
+// 4️⃣ Admin approve payment
 router.patch("/admin/approve", adminApprovePayment);
 
 
