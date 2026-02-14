@@ -14,7 +14,6 @@ exports.createPayment = async (req, res) => {
     try {
         const { amount } = req.body;
 
-        // ✅ Strict validation
         if (!amount || isNaN(amount) || Number(amount) <= 0) {
             return res.status(400).json({
                 success: false,
@@ -24,10 +23,8 @@ exports.createPayment = async (req, res) => {
 
         const numericAmount = Number(amount).toFixed(2);
 
-        // Generate secure unique orderId
         const orderId = "ORD" + uuidv4().replace(/-/g, "").slice(0, 12);
 
-        // Construct UPI string
         const upiString =
             `upi://pay?pa=${MERCHANT_UPI}` +
             `&pn=${encodeURIComponent(MERCHANT_NAME)}` +
@@ -35,17 +32,16 @@ exports.createPayment = async (req, res) => {
             `&cu=INR` +
             `&tn=${orderId}`;
 
-        // Generate QR as Base64
         const qrBase64 = await QRCode.toDataURL(upiString);
 
-        // Save payment as PENDING
         await Payment.create({
             orderId,
             amount: numericAmount,
             upiId: MERCHANT_UPI,
             qrString: upiString,
             qrBase64,
-            status: "PENDING"
+            status: "PENDING",
+            utr: null
         });
 
         return res.json({
@@ -66,7 +62,57 @@ exports.createPayment = async (req, res) => {
 
 
 // ============================================================
-// 2️⃣ CHECK PAYMENT STATUS (Android Polling)
+// 2️⃣ SUBMIT UTR (User submits transaction reference)
+// ============================================================
+
+exports.submitUtr = async (req, res) => {
+    try {
+        const { orderId, utr } = req.body;
+
+        if (!orderId || !utr) {
+            return res.status(400).json({
+                success: false,
+                message: "Order ID and UTR required"
+            });
+        }
+
+        const payment = await Payment.findOne({ orderId });
+
+        if (!payment) {
+            return res.status(404).json({
+                success: false,
+                message: "Order not found"
+            });
+        }
+
+        if (payment.status === "SUCCESS") {
+            return res.json({
+                success: true,
+                status: "SUCCESS"
+            });
+        }
+
+        payment.utr = utr;
+        payment.status = "UNDER_REVIEW";  // 🔥 Waiting for admin approval
+        await payment.save();
+
+        return res.json({
+            success: true,
+            status: "UNDER_REVIEW"
+        });
+
+    } catch (err) {
+        console.error("SUBMIT UTR ERROR:", err);
+        return res.status(500).json({
+            success: false,
+            message: "Server error submitting UTR"
+        });
+    }
+};
+
+
+// ============================================================
+// 3️⃣ CHECK PAYMENT STATUS (Android Polling)
 // ============================================================
 
 exports.checkStatus = async (req, res) => {
@@ -105,59 +151,42 @@ exports.checkStatus = async (req, res) => {
 
 
 // ============================================================
-// 3️⃣ SECURE WEBHOOK (Update Payment Status)
+// 4️⃣ ADMIN APPROVE PAYMENT (Manual Verification)
 // ============================================================
 
-exports.updateStatus = async (req, res) => {
+exports.adminApprovePayment = async (req, res) => {
     try {
-        // ✅ Webhook secret verification
-        const webhookSecret = req.headers["x-webhook-secret"];
+        const { orderId } = req.body;
 
-        if (webhookSecret !== process.env.PAYMENT_WEBHOOK_SECRET) {
-            return res.status(403).json({
-                success: false,
-                message: "Unauthorized webhook"
-            });
-        }
-
-        const { orderId, status } = req.body;
-
-        if (!orderId || !status) {
+        if (!orderId) {
             return res.status(400).json({
                 success: false,
-                message: "Invalid webhook payload"
+                message: "Order ID required"
             });
         }
 
-        const allowedStatuses = ["PENDING", "SUCCESS", "FAILED"];
+        const payment = await Payment.findOne({ orderId });
 
-        if (!allowedStatuses.includes(status)) {
-            return res.status(400).json({
-                success: false,
-                message: "Invalid payment status"
-            });
-        }
-
-        const updated = await Payment.findOneAndUpdate(
-            { orderId },
-            { status },
-            { new: true }
-        );
-
-        if (!updated) {
+        if (!payment) {
             return res.status(404).json({
                 success: false,
                 message: "Order not found"
             });
         }
 
-        return res.json({ success: true });
+        payment.status = "SUCCESS";
+        await payment.save();
+
+        return res.json({
+            success: true,
+            status: "SUCCESS"
+        });
 
     } catch (err) {
-        console.error("WEBHOOK ERROR:", err);
+        console.error("ADMIN APPROVE ERROR:", err);
         return res.status(500).json({
             success: false,
-            message: "Server error updating payment"
+            message: "Server error approving payment"
         });
     }
 };
