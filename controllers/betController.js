@@ -64,6 +64,8 @@ exports.submitBet = async (req, res) => {
             date
         });
 
+        console.log("Bet saved successfully for:", userId);
+
         // ============================================
         // 3️⃣ DECREASE REMAINING
         // ============================================
@@ -79,15 +81,28 @@ exports.submitBet = async (req, res) => {
                 { label: bet.number },
                 { $inc: { remaining: -decrementAmount } }
             );
+
+            console.log(
+                `Remaining updated for ${bet.number} (-${decrementAmount})`
+            );
         }
 
         // ============================================
         // 4️⃣ SEND PUSH NOTIFICATION
         // ============================================
         try {
+
+            console.log("Looking for user with mobile:", userId);
+
             const user = await User.findOne({ mobile: userId });
 
+            if (!user) {
+                console.log("User not found in DB for push:", userId);
+            }
+
             if (user && user.fcmToken) {
+
+                console.log("FCM Token found:", user.fcmToken);
 
                 const message = {
                     token: user.fcmToken,
@@ -97,12 +112,16 @@ exports.submitBet = async (req, res) => {
                     }
                 };
 
-                await admin.messaging().send(message);
-                console.log("Push sent successfully to user:", userId);
+                const response = await admin.messaging().send(message);
+
+                console.log("Push sent successfully:", response);
+
+            } else {
+                console.log("No FCM token found for user:", userId);
             }
 
         } catch (pushError) {
-            console.log("Push sending failed:", pushError.message);
+            console.log("Push sending failed:", pushError);
         }
 
         return res.json({
@@ -112,6 +131,7 @@ exports.submitBet = async (req, res) => {
         });
 
     } catch (err) {
+        console.log("Submit bet error:", err);
         return res.json({
             success: false,
             message: err.message,
@@ -148,6 +168,7 @@ exports.getUserHistory = async (req, res) => {
         });
 
     } catch (err) {
+        console.log("History error:", err);
         return res.json({
             success: false,
             message: err.message,
@@ -174,6 +195,7 @@ exports.getAllBets = async (req, res) => {
         });
 
     } catch (err) {
+        console.log("Get all bets error:", err);
         return res.json({
             success: false,
             message: err.message,
