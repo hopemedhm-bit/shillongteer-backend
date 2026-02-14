@@ -1,6 +1,8 @@
 const Bet = require("../models/Bet");
 const User = require("../models/User");
+const LimitItem = require("../models/LimitItem");
 const admin = require("firebase-admin");
+
 
 //
 // ========================
@@ -11,9 +13,49 @@ exports.submitBet = async (req, res) => {
     try {
         const { userId, bets, total_amount, round } = req.body;
 
-        // Store only YYYY-MM-DD
+        if (!userId || !bets || !Array.isArray(bets) || bets.length === 0) {
+            return res.json({
+                success: false,
+                message: "Invalid bet request",
+                data: null
+            });
+        }
+
         const date = new Date().toISOString().split("T")[0];
 
+        // ============================================
+        // 1️⃣ VALIDATE REMAINING BEFORE SAVING
+        // ============================================
+        for (const bet of bets) {
+
+            const limit = await LimitItem.findOne({ label: bet.number });
+
+            if (!limit) {
+                return res.json({
+                    success: false,
+                    message: `Limit not found for ${bet.number}`,
+                    data: null
+                });
+            }
+
+            let requiredAmount = bet.amount;
+
+            if (bet.type === "house" || bet.type === "ending") {
+                requiredAmount = bet.amount * 10;
+            }
+
+            if (limit.remaining < requiredAmount) {
+                return res.json({
+                    success: false,
+                    message: `${bet.number} is full or insufficient remaining`,
+                    data: null
+                });
+            }
+        }
+
+        // ============================================
+        // 2️⃣ SAVE BET
+        // ============================================
         const saved = await Bet.create({
             userId,
             bets,
@@ -22,9 +64,26 @@ exports.submitBet = async (req, res) => {
             date
         });
 
-        // ===========================
-        // 🔥 SEND PUSH NOTIFICATION
-        // ===========================
+        // ============================================
+        // 3️⃣ DECREASE REMAINING
+        // ============================================
+        for (const bet of bets) {
+
+            let decrementAmount = bet.amount;
+
+            if (bet.type === "house" || bet.type === "ending") {
+                decrementAmount = bet.amount * 10;
+            }
+
+            await LimitItem.updateOne(
+                { label: bet.number },
+                { $inc: { remaining: -decrementAmount } }
+            );
+        }
+
+        // ============================================
+        // 4️⃣ SEND PUSH NOTIFICATION
+        // ============================================
         try {
             const user = await User.findById(userId);
 
@@ -39,10 +98,7 @@ exports.submitBet = async (req, res) => {
                 };
 
                 await admin.messaging().send(message);
-
                 console.log("Push sent successfully to user:", userId);
-            } else {
-                console.log("No FCM token found for user:", userId);
             }
 
         } catch (pushError) {
@@ -72,6 +128,7 @@ exports.submitBet = async (req, res) => {
 //
 exports.getUserHistory = async (req, res) => {
     try {
+
         const userId = req.query.userId;
         const filter = req.query.filter || "today";
 
@@ -107,6 +164,7 @@ exports.getUserHistory = async (req, res) => {
 //
 exports.getAllBets = async (req, res) => {
     try {
+
         const bets = await Bet.find().sort({ _id: -1 });
 
         return res.json({
