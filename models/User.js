@@ -1,8 +1,23 @@
 const mongoose = require("mongoose");
 
 const userSchema = new mongoose.Schema({
-    mobile: String,
-    createdAt: { type: Date, default: Date.now }
+    mobile: {
+        type: String,
+        required: true,
+        unique: true
+    },
+
+    // 🔥 Add this field
+    fcmToken: {
+        type: String,
+        default: null
+    },
+
+    createdAt: {
+        type: Date,
+        default: Date.now
+    }
 });
 
 module.exports = mongoose.model("User", userSchema);
+
