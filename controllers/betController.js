@@ -85,7 +85,7 @@ exports.submitBet = async (req, res) => {
         // 4️⃣ SEND PUSH NOTIFICATION
         // ============================================
         try {
-            const user = await User.findById(userId);
+            const user = await User.findOne({ mobile: userId });
 
             if (user && user.fcmToken) {
 
