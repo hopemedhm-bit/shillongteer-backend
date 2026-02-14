@@ -3,6 +3,8 @@ const cors = require("cors");
 const dotenv = require("dotenv");
 const connectDB = require("./config/db");
 const path = require("path");
+const fcmRoutes = require("./routes/fcmRoutes");
+
 
 // ===============================
 // LOAD ENV VARIABLES
@@ -41,6 +43,10 @@ app.use("/payment", require("./routes/paymentRoutes"));
 
 // ⭐ TIME + STATUS
 app.use("/", require("./routes/statusRoutes"));
+
+
+app.use("/fcm", fcmRoutes);
+
 
 // ===============================
 // SERVE ADMIN PANEL STATIC FILES
