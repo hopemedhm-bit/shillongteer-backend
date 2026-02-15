@@ -99,39 +99,69 @@ exports.updateResult = async (req, res) => {
         // ==============================
 
         let title = "Shillong Teer Result 🎯";
-        let body = "";
+        let bodyParts = [];
 
-        if (round1 !== undefined) {
-            body = `First Round Result: ${round1}`;
+        if (round1 !== undefined && round1 !== "") {
+            bodyParts.push(`🎯 FR: ${round1}`);
         }
 
-        if (round2 !== undefined) {
-            body = `Second Round Result: ${round2}`;
+        if (round2 !== undefined && round2 !== "") {
+            bodyParts.push(`🎯 SR: ${round2}`);
         }
 
-        if (body !== "") {
+        if (bodyParts.length > 0) {
 
+            const body = bodyParts.join(" | ");
+
+            // Get all users with valid FCM tokens
             const users = await User.find({
                 fcmToken: { $ne: null }
             });
 
-            const tokens = users.map(u => u.fcmToken);
+            const tokens = users.map(u => u.fcmToken).filter(Boolean);
 
             if (tokens.length > 0) {
 
-                const message = {
-                    notification: {
-                        title: title,
-                        body: body
-                    },
-                    tokens: tokens
-                };
+                const chunkSize = 500;
 
-                try {
-                    const response = await admin.messaging().sendEachForMulticast(message);
-                    console.log("Result push sent:", response.successCount);
-                } catch (pushError) {
-                    console.log("Result push error:", pushError.message);
+                for (let i = 0; i < tokens.length; i += chunkSize) {
+
+                    const chunk = tokens.slice(i, i + chunkSize);
+
+                    const message = {
+                        notification: {
+                            title: title,
+                            body: body
+                        },
+                        data: {
+                            type: "RESULT_UPDATE",
+                            round1: round1 || "",
+                            round2: round2 || "",
+                            date: today
+                        },
+                        tokens: chunk
+                    };
+
+                    try {
+                        const response = await admin.messaging().sendEachForMulticast(message);
+
+                        console.log("Push success:", response.successCount);
+
+                        // Remove invalid tokens
+                        response.responses.forEach(async (resp, idx) => {
+                            if (!resp.success) {
+                                const failedToken = chunk[idx];
+                                await User.updateOne(
+                                    { fcmToken: failedToken },
+                                    { $set: { fcmToken: null } }
+                                );
+                                console.log("Removed invalid token:", failedToken);
+                            }
+                        });
+
+                    } catch (pushError) {
+                        console.log("Push error:", pushError.message);
+                    }
                 }
             }
         }
