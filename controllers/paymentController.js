@@ -6,8 +6,11 @@ const { v4: uuidv4 } = require("uuid");
 const MERCHANT_UPI = "6000120935@okbizaxis";
 const MERCHANT_NAME = "TeerApp";
 
+// 🔥 FIXED DISCOUNT %
+const DISCOUNT_PERCENT = 7;
+
 // ============================================================
-// 1️⃣ CREATE PAYMENT (Generate Dynamic QR)
+// 1️⃣ CREATE PAYMENT (Generate Dynamic QR with 7% Discount)
 // ============================================================
 
 exports.createPayment = async (req, res) => {
@@ -21,9 +24,19 @@ exports.createPayment = async (req, res) => {
             });
         }
 
-        const numericAmount = Number(amount).toFixed(2);
+        const originalAmount = Number(amount);
 
-        const orderId = "ORD" + uuidv4().replace(/-/g, "").slice(0, 12);
+        // 🔥 Calculate 7% Discount
+        const discountAmount = Math.floor(
+            (originalAmount * DISCOUNT_PERCENT) / 100
+        );
+
+        const finalAmount = originalAmount - discountAmount;
+
+        const numericAmount = finalAmount.toFixed(2);
+
+        const orderId =
+            "ORD" + uuidv4().replace(/-/g, "").slice(0, 12);
 
         const upiString =
             `upi://pay?pa=${MERCHANT_UPI}` +
@@ -36,7 +49,9 @@ exports.createPayment = async (req, res) => {
 
         await Payment.create({
             orderId,
-            amount: numericAmount,
+            originalAmount,
+            discountAmount,
+            amount: numericAmount, // final payable
             upiId: MERCHANT_UPI,
             qrString: upiString,
             qrBase64,
@@ -47,7 +62,9 @@ exports.createPayment = async (req, res) => {
         return res.json({
             success: true,
             orderId,
-            amount: numericAmount,
+            originalAmount,
+            discountAmount,
+            finalAmount: numericAmount,
             qrBase64
         });
 
@@ -93,7 +110,7 @@ exports.submitUtr = async (req, res) => {
         }
 
         payment.utr = utr;
-        payment.status = "UNDER_REVIEW";  // 🔥 Waiting for admin approval
+        payment.status = "UNDER_REVIEW";
         await payment.save();
 
         return res.json({
