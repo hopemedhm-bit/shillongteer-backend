@@ -8,6 +8,19 @@ const paymentSchema = new mongoose.Schema({
         unique: true 
     },
 
+    // 🔥 Original amount before discount
+    originalAmount: {
+        type: Number,
+        required: true
+    },
+
+    // 🔥 Discount value applied (7%)
+    discountAmount: {
+        type: Number,
+        default: 0
+    },
+
+    // 🔥 Final payable amount (QR amount)
     amount: { 
         type: Number, 
         required: true 
@@ -28,13 +41,12 @@ const paymentSchema = new mongoose.Schema({
         required: true 
     },
 
-    // 🔥 NEW: Store UTR submitted by user
+    // UTR submitted by user
     utr: {
         type: String,
         default: null
     },
 
-    // 🔥 Updated status flow
     status: {
         type: String,
         enum: ["PENDING", "UNDER_REVIEW", "SUCCESS", "FAILED"],
